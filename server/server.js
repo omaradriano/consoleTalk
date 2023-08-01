@@ -9,15 +9,26 @@ const listen = (port) => {
 
     //Cuando haya una nueva conexión con el servidor
     server.on('connection', (socket) => {
-        console.log(`Nueva conexion desde ${socket.remoteAddress}:${socket.remotePort}`);
+        console.log(`Nuevo intento de conexion desde ${socket.remoteAddress}:${socket.remotePort}`);
+        socket.write('Se necesita una accion: !login | !register:')
         socket.setEncoding('utf-8')
 
+        const user =  `${socket.remoteAddress}:${socket.remotePort}`
+
         socket.on('data', (message) => {
-            socket.write(message)
+            if(message === 'exit'){
+                console.log(`${user} ha salido`);
+                socket.end()
+            }else{
+                console.log(`${user} -> ${message}`);
+            }
         })
     })
     server.on('error', (err)=>{
         error(err.message)
+    })
+    server.on('close', ()=>{
+        console.log(`${socket.remoteAddress} ha salido`);
     })
 }
 
@@ -27,6 +38,7 @@ const sendMessage = (message, originUser) => {
     //Enviar mensaje a todos menos a origin
 }
 
+//Correr el servidor, esta parte ya no se toca de momento
 const main = () => {
     console.log(process.argv);
     if(process.argv.length !== 3){
