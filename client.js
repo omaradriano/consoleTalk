@@ -10,9 +10,10 @@ const rl = readline.createInterface({
 import pool from './DB/dbconn.js'
 
 /**
- * - Enviar mensajes a todos menos al que lo mando
  * - Realizar el registro de un usuario
  * - Mejorar el login 
+ * - Agregar comandos: mostrar los usuarios activos
+ * - Agregar y borrar usuarios activos
  */
 
 const socket = new Socket()

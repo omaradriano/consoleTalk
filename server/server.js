@@ -10,7 +10,7 @@ const listen = (port) => {
 
     //Cuando haya una nueva conexión con el servidor
     server.on('connection', (socket) => {
-        console.log(`Nuevo intento de conexion desde ${socket.remoteAddress}:${socket.remotePort}`);
+        // console.log(`Nuevo intento de conexion desde ${socket.remoteAddress}:${socket.remotePort}`);
         socket.write('Se necesita una accion: !login | !register:')
         socket.setEncoding('utf-8')
 
@@ -23,16 +23,21 @@ const listen = (port) => {
             // console.log(allMessage);
             if(allMessage[0] === '!!'){
                 if(allMessage[1] === 'activeUser'){
-                    console.log('Nuevo usuario activo');
+                    console.log(`${allMessage[2]} se ha unido`);
                     activeConnections.set(socket, allMessage[2])
                     // console.log(activeConnections);
                 }
             }else if(allMessage[0] === '!'){
                 if(allMessage[1] === 'exit'){
+                    activeConnections.delete(socket)
                     socket.end()
                     console.log(`${user} ha salido`);
                 }else if(allMessage[1] === 'test'){
                     console.log('Comando test');
+                }else if(allMessage[1] === 'showUsers'){
+                    for(let user of activeConnections.values()){
+                        console.log(`Name: ${user}`);
+                    }
                 }
             }else{
                 console.log(`${user} -> ${message}`);
@@ -42,10 +47,10 @@ const listen = (port) => {
     })
     server.on('error', (err)=>{
         error(err.message)
+        activeConnections.delete(socket)
     })
     server.on('close', ()=>{
         console.log(`${socket.remoteAddress} ha salido`);
-        activeConnections.delete(socket)
     })
 }
 
@@ -54,7 +59,7 @@ const sendMessages = (message, originUser) => {
     //Enviar mensaje a todos menos a origin
     for(let user of activeConnections.keys()){
         if(originUser !== user){
-            user.write(`${originUser.remoteAddress}:${originUser.remotePort} -> ${message}`)
+            user.write(`${activeConnections.get(user)} -> ${message}`)
         }
     }
 
