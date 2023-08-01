@@ -6,7 +6,14 @@ const rl = readline.createInterface({
     output: process.stdout
 }) //Interfaz creada para leer datos por consola
 
+//Importancion de la base de datos
 import pool from './DB/dbconn.js'
+
+/**
+ * - Enviar mensajes a todos menos al que lo mando
+ * - Realizar el registro de un usuario
+ * - Mejorar el login 
+ */
 
 const socket = new Socket()
 socket.connect({ host: '127.0.0.1', port: 8000 })
@@ -15,7 +22,7 @@ let aciveState = false
 
 rl.on('line', async (text) => {
     if (aciveState) {
-        if (text === 'exit') {
+        if (text === '!exit') {
             socket.write(text)
             socket.end()
         } else {
@@ -23,10 +30,10 @@ rl.on('line', async (text) => {
             //RECODATORIO: no se debe de escribir despues de cerrar el socket por que nos va a llamar a un error.
         }
     } else if (text === '!login') {
-        const user = await rl.question('User: ')
-        const [checkUser] = await pool.query('select * from player where name = ?', [user])
-        // console.log(checkUser[0] + 'Esto proviene de los datos de usuario en caso de que si exista '); //Imprime los datos del usuario
         try {
+            const user = await rl.question('User: ')
+            const [checkUser] = await pool.query('select * from player where name = ?', [user])
+            // console.log(checkUser[0] + 'Esto proviene de los datos de usuario en caso de que si exista '); //Imprime los datos del usuario
             if (!checkUser[0]) {
                 throw new Error('---------- No existe el usuario ----------');
             }
@@ -36,8 +43,9 @@ rl.on('line', async (text) => {
                 // console.log(typeof pass[0].password);
                 if(inPass === pass[0].password){
                     aciveState = true
+                    socket.write(`!!activeUser ${user}`)
                     console.clear()
-                    console.log('---------- Loggeado ----------');
+                    console.log('---------- Envia mensaje o escribe \'!exit\' para salir ----------');
                 }else
                     throw new Error('Contraseña incorrecta')
                 

@@ -1,5 +1,6 @@
 import { Server } from 'net'
 
+const activeConnections = new Map()
 
 const listen = (port) => {
     const server = new Server()
@@ -13,14 +14,29 @@ const listen = (port) => {
         socket.write('Se necesita una accion: !login | !register:')
         socket.setEncoding('utf-8')
 
+        const adminReg = /^(!|!!)(?=\w)/g
+
         const user =  `${socket.remoteAddress}:${socket.remotePort}`
 
         socket.on('data', (message) => {
-            if(message === 'exit'){
-                console.log(`${user} ha salido`);
-                socket.end()
+            const allMessage = message.replace(adminReg, message.match(adminReg)+' ').split(' ')
+            // console.log(allMessage);
+            if(allMessage[0] === '!!'){
+                if(allMessage[1] === 'activeUser'){
+                    console.log('Nuevo usuario activo');
+                    activeConnections.set(socket, allMessage[2])
+                    // console.log(activeConnections);
+                }
+            }else if(allMessage[0] === '!'){
+                if(allMessage[1] === 'exit'){
+                    socket.end()
+                    console.log(`${user} ha salido`);
+                }else if(allMessage[1] === 'test'){
+                    console.log('Comando test');
+                }
             }else{
                 console.log(`${user} -> ${message}`);
+                sendMessages(message, socket)
             }
         })
     })
@@ -29,13 +45,19 @@ const listen = (port) => {
     })
     server.on('close', ()=>{
         console.log(`${socket.remoteAddress} ha salido`);
+        activeConnections.delete(socket)
     })
 }
 
-const activeConnections = new Map()
 
-const sendMessage = (message, originUser) => {
+const sendMessages = (message, originUser) => {
     //Enviar mensaje a todos menos a origin
+    for(let user of activeConnections.keys()){
+        if(originUser !== user){
+            user.write(`${originUser.remoteAddress}:${originUser.remotePort} -> ${message}`)
+        }
+    }
+
 }
 
 //Correr el servidor, esta parte ya no se toca de momento
