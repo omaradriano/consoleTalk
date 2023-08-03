@@ -41,7 +41,6 @@ rl.on('line', async (text) => {
             }
             const [checkUser] = await pool.query('select * from player where username = ?', [user])
             // console.log(checkUser);
-            // console.log(checkUser[0] + 'Esto proviene de los datos de usuario en caso de que si exista '); //Imprime los datos del usuario
             try { //este bloque abarca errores bajo las condiciones de usuario inexistente
                 if (checkUser.length === 0) {
                     activeState = false
@@ -54,6 +53,7 @@ rl.on('line', async (text) => {
                         activeState = true
                         socket.write(`!!activeUser ${user}`)
                         console.log('Pasa por aqui');
+                        rl.write('Mensaje escrito')
                         console.clear()
                         console.log('---------- Envia mensaje o escribe \'!exit\' para salir ----------');
                     } else {
@@ -121,7 +121,6 @@ rl.on('line', async (text) => {
                 console.clear()
                 console.log(colors.yellow(error.message));
                 console.log('Se necesita una accion: !login | !register from client');
-                return
             }
 
         }
