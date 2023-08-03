@@ -1,0 +1,32 @@
+JERARQUÍA
+
+*** MAS IMPORTANTE
+**  SUBTEMA
+*   NOTA ADICIONAL
+
+---------- client.js ----------
+
+*** Realizar el registro de un usuario
+*** Mejorar el login
+    ** Aún se deben de corregir algunos detalles con el login
+        * Con cada error que ocurre en el login debe retomar el paso donde se quedó, no tener que usar de nuevo el comando !login o !register
+*** Configurar el registro para no permitir usuarios con el mismo username
+*** Poner el socket en un archivo a parte
+
+----- cliente.js | comentarios comunidad Facebook -----
+
+** Manejar un archivo externo que contenga las validaciones y el texto plano
+** Reajustar el trycatch
+** Tal vez uso de una librería para hacer las validaciones
+
+** Mucha complejidad ciclomática
+
+
+---------- server.js ----------
+
+
+---------- test.js ----------
+
+
+
+

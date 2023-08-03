@@ -1,13 +1,11 @@
 import { Socket } from 'net'
 import * as readline from 'node:readline/promises';
-// import { stdin as input, stdout as output } from 'node:process';
-const rl = readline.createInterface({
+const rl = readline.createInterface({ //Interfaz creada para leer datos por consola
     input: process.stdin,
     output: process.stdout
-}) //Interfaz creada para leer datos por consola
-import colors from 'colors/safe.js'
-import { v4 as uuid_v4 } from 'uuid'
-console.log(uuid_v4());
+})
+import colors from 'colors/safe.js' //Mostrar colores por consola
+import { v4 as uuid_v4 } from 'uuid' //Generador de ids para registrar usuarios
 
 /**
  *  green: se ha unido
@@ -15,15 +13,8 @@ console.log(uuid_v4());
  *  red: ha salido
  */
 
-//Importancion de la base de datos
-import pool from './DB/dbconn.js'
 
-/**
- * - Realizar el registro de un usuario
- * - Mejorar el login 
- * - Agregar comandos: mostrar los usuarios activos (A medias, aún no se como visualizarlo)
- * - Agregar y borrar usuarios activos
- */
+import pool from '../DB/dbconn.js' //Importar la base de datos
 
 const socket = new Socket()
 socket.connect({ host: '127.0.0.1', port: 8000 })
@@ -32,17 +23,23 @@ let activeState = false
 
 rl.on('line', async (text) => {
     if (activeState) {
-        if (text === '!exit') {
-            socket.write(text)
-            socket.end()
-        } else {
-            socket.write(text)
-            //RECODATORIO: no se debe de escribir despues de cerrar el socket por que nos va a llamar a un error.
+        switch (text) {
+            case '!exit':
+                socket.write(text)
+                socket.end()
+                break;
+            default:
+                socket.write(text)
+                break;
         }
+        //RECODATORIO: no se debe de escribir despues de cerrar el socket por que nos va a llamar a un error.
     } else if (text === '!login') {
         try { //Bloque trycatch que abarca un error en la conexion a la bdd
             const user = await rl.question('User: ')
-            const [checkUser] = await pool.query('select * from player where name = ?', [user])
+            if (user.length === 0) {
+                throw new Error('El campo se encuentra vacio')
+            }
+            const [checkUser] = await pool.query('select * from player where username = ?', [user])
             // console.log(checkUser);
             // console.log(checkUser[0] + 'Esto proviene de los datos de usuario en caso de que si exista '); //Imprime los datos del usuario
             try { //este bloque abarca errores bajo las condiciones de usuario inexistente
@@ -50,13 +47,13 @@ rl.on('line', async (text) => {
                     activeState = false
                     throw new Error('No existe el usuario en la base de datos')
                 }
-                if (checkUser[0].user_id.length !== 0) {
+                if (checkUser[0].username.length !== 0) {
                     const inPass = await rl.question('Ingresar password:')
-                    const [pass] = await pool.query('select password from player where name = ?', [user])
-                    // console.log(typeof pass[0].password);
-                    if (inPass === pass[0].password) {
+                    const [pass] = await pool.query('select pass from player where username = ?', [user])
+                    if (inPass === pass[0].pass) {
                         activeState = true
                         socket.write(`!!activeUser ${user}`)
+                        console.log('Pasa por aqui');
                         console.clear()
                         console.log('---------- Envia mensaje o escribe \'!exit\' para salir ----------');
                     } else {
@@ -71,46 +68,53 @@ rl.on('line', async (text) => {
             }
         } catch (err) {
             console.clear()
+            console.log(err.message);
             console.error(`----- Ha habido un error de la conexion a la base de datos -----`)
         }
-        // if()
     } else if (text === '!register') {
-        // const name = await rl.question('Name: ')
-        // const username = await rl.question('Username: ')
+        const name = await rl.question('Name: ')
+        const username = await rl.question('Username: ')
         let pass = await rl.question('Password: ')
         const regUserTest = /^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,20}$/g;
         const regCapitalLetters = /[A-Z]+/g
         const regNumbers = /\d+/g
         let passtester = false
-        //Validador de contraseña
-        if (pass.length > 0) {
-            // let passNumbersTester = pass.split('').some((elem, _, arr) => { //Validar si tiene números
-            //     let item = Number(elem)
-            //     return !Number.isNaN(item) ? true : false
-            // })
+        const uuid = uuid_v4().substring(0, 8)
+        if (pass.length > 0) { //Validar que se haya escrito una constraseña
             let passCapitalLettersTester = regCapitalLetters.test(pass)
             let passNumbersTester = regNumbers.test(pass)
             try {
-                if (pass.length < 8) {
+                if (pass.length < 8) { //No pasa si tiene menos de 8 caracteres
                     console.clear()
                     throw new Error('La contraseña no debe tener menos de 8 caracteres')
-                } else if (pass.length > 20) {
+                } else if (pass.length > 20) { //No pasa si tiene más de 8 caracteres
                     console.clear()
                     throw new Error('La contraseña no debe tener más de 20 caracteres')
                 }
-                if (!passCapitalLettersTester) {
+                if (!passCapitalLettersTester) { //No pasa si no contiene mayúsculas
                     throw new Error('La contraseña debe contener letras masyúsculas')
                 } else {
-                    if (!passNumbersTester) {
+                    if (!passNumbersTester) { //No pasa si no contiene números
                         throw new Error('La contraseña debe contener almenos un número')
 
                     } else {
-                        if (regUserTest.test(pass)) {
-                            // console.log('En este punto si jala');
+                        if (regUserTest.test(pass)) { //Una ultima validación con regUserTest
                             passtester = true
                         } else {
                             throw new Error('La contraseña no es válida')
                         }
+                    }
+                }
+                if (passtester) {
+                    const confirmPass = await rl.question(`${colors.green('Confirm password: ')}`)
+                    if (pass === confirmPass) {
+                        console.clear()
+                        await pool.query('insert into player (u_id, name, pass, username) values (?,?,?,?)', [uuid, name, confirmPass, username])
+                        // console.log(colors.green('Registrado :D'));
+                        rl.write(colors.green('Registrado :D'))
+                    } else {
+                        console.clear()
+                        throw new Error('Las constraseñas no coinciden')
                     }
                 }
             } catch (error) {
@@ -119,22 +123,6 @@ rl.on('line', async (text) => {
                 console.log('Se necesita una accion: !login | !register from client');
                 return
             }
-            if (passtester) {
-                const confirmPass = await rl.question(`${colors.green('Confirm password: ')}`)
-                if (pass === confirmPass) {
-                    console.clear()
-                    console.log(colors.green('Registrado :D'));
-                    // console.log('Las contraseñas coinciden');
-                } else {
-                    console.clear()
-                    console.log(colors.red('Las contraseñas no coinciden'));
-                    console.log('Se necesita una accion: !login | !register from client');
-                    return
-                }
-            } else {
-                console.log('Apartado donde no sé que pasa');
-            }
-            // console.log(passTester);
 
         }
 
