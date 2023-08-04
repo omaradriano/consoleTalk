@@ -12,6 +12,7 @@ JERARQUÍA
         * Con cada error que ocurre en el login debe retomar el paso donde se quedó, no tener que usar de nuevo el comando !login o !register
 *** Configurar el registro para no permitir usuarios con el mismo username
 *** Poner el socket en un archivo a parte
+**  Buscar la forma de limpiar la consola para sustituir console.clear()
 
 ----- cliente.js | comentarios comunidad Facebook -----
 

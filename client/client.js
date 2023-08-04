@@ -53,8 +53,9 @@ rl.on('line', async (text) => {
                         activeState = true
                         socket.write(`!!activeUser ${user}`)
                         console.log('Pasa por aqui');
-                        rl.write('Mensaje escrito')
-                        console.clear()
+                        // rl.write('Mensaje escrito')
+                        process.stdout.write('\x1Bc'); 
+                        // process.stdout.write('\x1Bc');
                         console.log('---------- Envia mensaje o escribe \'!exit\' para salir ----------');
                     } else {
                         activeState = false
@@ -62,12 +63,12 @@ rl.on('line', async (text) => {
                     }
                 }
             } catch (err) {
-                console.clear()
+                process.stdout.write('\x1Bc');
                 console.log(err.message);
                 console.log('Se necesita una accion: !login | !register from client');
             }
         } catch (err) {
-            console.clear()
+            process.stdout.write('\x1Bc');
             console.log(err.message);
             console.error(`----- Ha habido un error de la conexion a la base de datos -----`)
         }
@@ -85,10 +86,10 @@ rl.on('line', async (text) => {
             let passNumbersTester = regNumbers.test(pass)
             try {
                 if (pass.length < 8) { //No pasa si tiene menos de 8 caracteres
-                    console.clear()
+                    process.stdout.write('\x1Bc');
                     throw new Error('La contraseña no debe tener menos de 8 caracteres')
                 } else if (pass.length > 20) { //No pasa si tiene más de 8 caracteres
-                    console.clear()
+                    process.stdout.write('\x1Bc');
                     throw new Error('La contraseña no debe tener más de 20 caracteres')
                 }
                 if (!passCapitalLettersTester) { //No pasa si no contiene mayúsculas
@@ -108,17 +109,17 @@ rl.on('line', async (text) => {
                 if (passtester) {
                     const confirmPass = await rl.question(`${colors.green('Confirm password: ')}`)
                     if (pass === confirmPass) {
-                        console.clear()
+                        process.stdout.write('\x1Bc');
                         await pool.query('insert into player (u_id, name, pass, username) values (?,?,?,?)', [uuid, name, confirmPass, username])
                         // console.log(colors.green('Registrado :D'));
                         rl.write(colors.green('Registrado :D'))
                     } else {
-                        console.clear()
+                        process.stdout.write('\x1Bc');
                         throw new Error('Las constraseñas no coinciden')
                     }
                 }
             } catch (error) {
-                console.clear()
+                process.stdout.write('\x1Bc');
                 console.log(colors.yellow(error.message));
                 console.log('Se necesita una accion: !login | !register from client');
             }
@@ -145,6 +146,7 @@ socket.on('error', (err) => {
 socket.on('close', () => {
     //Se usa esta parte para concluir con la conexion. Cuando se usa socket.end() 
     //ambos deben de esperar su confirmacion y cuando eso ocurre, se ejecuta esta funcion.
+    process.stdout.write('\x1Bc');
     console.log('Sesion cerrada');
     process.exit(0)
 })
