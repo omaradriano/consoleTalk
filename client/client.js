@@ -50,7 +50,7 @@ rl.on('line', async (text) => {
                 }
             } catch (err) {
                 process.stdout.write('\x1Bc');
-                process.stdout.write(err.message+'');
+                process.stdout.write(err.message + '');
                 process.stdout.write('Se necesita una accion: !login | !register\n');
             }
         } catch (err) {
@@ -67,64 +67,57 @@ rl.on('line', async (text) => {
         const regNumbers = /\d+/g
         let passtester = false
         const uuid = uuid_v4().substring(0, 8)
-        if (pass.length > 0) { //Validar que se haya escrito una constraseña
+        try {
+            if (pass.length === 0) throw new Error('Debe de ingresarse una contraseña') //En caso de que no haya un texto ingresado
             let passCapitalLettersTester = regCapitalLetters.test(pass)
             let passNumbersTester = regNumbers.test(pass)
-            try {
-                if (pass.length < 8) { //No pasa si tiene menos de 8 caracteres
-                    process.stdout.write('\x1Bc');
-                    throw new Error('La contraseña no debe tener menos de 8 caracteres')
-                }
-                if (pass.length > 20) { //No pasa si tiene más de 8 caracteres
-                    process.stdout.write('\x1Bc');
-                    throw new Error('La contraseña no debe tener más de 20 caracteres')
-                }
-                if (!passCapitalLettersTester) { //No pasa si no contiene mayúsculas
-                    throw new Error('La contraseña debe contener letras masyúsculas')
-                }
-                if (!passNumbersTester) { //No pasa si no contiene números
-                    throw new Error('La contraseña debe contener almenos un número')
-                }
-                if (regUserTest.test(pass)) { //Una ultima validación con regUserTest
-                    passtester = true
-                } else {
-                    throw new Error('La contraseña no es válida')
-                }
-                if (passtester) {
-                    const confirmPass = await rl.question(`${colors.green('Confirm password: ')}`)
-                    if (pass === confirmPass) {
-                        process.stdout.write('\x1Bc');
-                        await pool.query('insert into player (u_id, name, pass, username) values (?,?,?,?)', [uuid, name, confirmPass, username])
-                        // console.log(colors.green('Registrado :D'));
-                        process.stdout.write(colors.green('Registrado, usa comando !login\n'))
-                    } else {
-                        process.stdout.write('\x1Bc');
-                        throw new Error('Las constraseñas no coinciden')
-                    }
-                }
-            } catch (error) {
-                process.stdout.write('\x1Bc');
-                process.stdout.write(colors.yellow(error.message)+'\n');
-                process.stdout.write('Se necesita una accion: !login | !register from client\n');
+            if (pass.length < 8) { //No pasa si tiene menos de 8 caracteres
+                throw new Error('La contraseña no debe tener menos de 8 caracteres')
             }
-
+            if (pass.length > 20) { //No pasa si tiene más de 8 caracteres
+                throw new Error('La contraseña no debe tener más de 20 caracteres')
+            }
+            if (!passCapitalLettersTester) { //No pasa si no contiene mayúsculas
+                throw new Error('La contraseña debe contener letras masyúsculas')
+            }
+            if (!passNumbersTester) { //No pasa si no contiene números
+                throw new Error('La contraseña debe contener almenos un número')
+            }
+            passtester = true
+            if (!regUserTest.test(pass) || !passtester) { //Una ultima validación con regUserTest
+                throw new Error('La contraseña no es válida')
+            }
+            const confirmPass = await rl.question(`${colors.green('Confirm password: ')}`)
+            if (confirmPass.length === 0) {
+                throw new Error('Se debe ingresar la confirmación de la contraseña')
+            }
+            if (pass !== confirmPass) { //Comparar la contraseña del usuario existente y la recíen ingresada
+                throw new Error('Las contraseñas no coinciden')
+            }
+            await pool.query('insert into player (u_id, name, pass, username) values (?,?,?,?)', [uuid, name, confirmPass, username])
+            // console.log(colors.green('Registrado :D'));
+            process.stdout.write('\x1Bc');
+            process.stdout.write(colors.green('Registrado, usa comando !login\n'))
+        } catch (error) {
+            process.stdout.write('\x1Bc');
+            process.stdout.write(colors.yellow(error.message) + '\n');
+            process.stdout.write('Se necesita una accion: !login | !register\n');
         }
-
-    }else{
+    } else {
         process.stdout.write('\x1Bc');
         process.stdout.write('Comando inexistente\n')
-        process.stdout.write('Se necesita una accion: !login | !register from client\n');
+        process.stdout.write('Se necesita una accion: !login | !register\n');
     }
 })
 
 socket.on('data', async (message) => {
     // const allMessage = message.replace(adminReg, message.match(adminReg) + ' ').split(' ')
 
-    process.stdout.write(message+ '\n');
+    process.stdout.write(message + '\n');
 })
 
 socket.on('error', (err) => {
-    process.stdout.write(err+'');
+    process.stdout.write(err + '');
     process.stdout.write('Se ha interrumpido la conexion inesperadamente');
     process.exit(1)
 })
