@@ -51,35 +51,13 @@ rl.on('line', async (text) => {
             }
         }
     } else if (text === '!register') {
-        const MIN_PASS_LENGTH = 8
-        const MAX_PASS_LENGTH = 20
-        const REG_USER_TEST = /^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,20}$/g; //Las regex no admiten letra ñ 
-        const REG_CAPITAL_LETTERS = /[A-Z]+/g
-        const REG_NUMBERS = /\d+/g
         const name = await rl.question('Name: ')
         const username = await rl.question('Username: ')
         let pass = await rl.question('Password: ')
         let passtester = false //No se esta usando pero se va a usar para el ciclo do_while
         const uuid = uuid_v4().substring(0, 8)
         try {
-            if (pass.length === 0) throw new Error('Debe de ingresarse una contraseña') //En caso de que no haya un texto ingresado
-            let passCapitalLettersTester = REG_CAPITAL_LETTERS.test(pass)
-            let passNumbersTester = REG_NUMBERS.test(pass)
-            if (pass.length < 8) { //No pasa si tiene menos de 8 caracteres
-                throw new Error(`La contraseña no debe tener menos de ${MIN_PASS_LENGTH} caracteres`)
-            }
-            if (pass.length > 20) { //No pasa si tiene más de 8 caracteres
-                throw new Error(`La contraseña no debe tener más de ${MAX_PASS_LENGTH} caracteres`)
-            }
-            if (!passCapitalLettersTester) { //No pasa si no contiene mayúsculas
-                throw new Error('La contraseña debe contener letras masyúsculas')
-            }
-            if (!passNumbersTester) { //No pasa si no contiene números
-                throw new Error('La contraseña debe contener almenos un número')
-            }
-            if (!REG_USER_TEST.test(pass)) { //Una ultima validación con REG_USER_TEST
-                throw new Error('La contraseña no es válida')
-            }
+            await validatePass(pass)
             const confirmPass = await rl.question(`${colors.green('Confirm password: ')}`)
             if (confirmPass.length === 0) {
                 throw new Error('Se debe ingresar la confirmación de la contraseña')
@@ -109,7 +87,35 @@ socket.on('data', async (message) => {
     process.stdout.write(colors.blue(message) + '\n');
 })
 
-
+const validatePass = (pass, min_length = 8, max_length = 20) => {
+    return new Promise((resolve) => {
+        const MIN_PASS_LENGTH = min_length
+        const MAX_PASS_LENGTH = max_length
+        const REG_USER_TEST = /^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,20}$/g; //Las regex no admiten letra ñ 
+        const REG_CAPITAL_LETTERS = /[A-Z]+/g
+        const REG_NUMBERS = /\d+/g
+    
+        if (pass.length === 0) throw new Error('Debe de ingresarse una contraseña') //En caso de que no haya un texto ingresado
+        let passCapitalLettersTester = REG_CAPITAL_LETTERS.test(pass)
+        let passNumbersTester = REG_NUMBERS.test(pass)
+        if (pass.length < 8) { //No pasa si tiene menos de 8 caracteres
+            throw new Error(`La contraseña no debe tener menos de ${MIN_PASS_LENGTH} caracteres`)
+        }
+        if (pass.length > 20) { //No pasa si tiene más de 8 caracteres
+            throw new Error(`La contraseña no debe tener más de ${MAX_PASS_LENGTH} caracteres`)
+        }
+        if (!passCapitalLettersTester) { //No pasa si no contiene mayúsculas
+            throw new Error('La contraseña debe contener letras masyúsculas')
+        }
+        if (!passNumbersTester) { //No pasa si no contiene números
+            throw new Error('La contraseña debe contener almenos un número')
+        }
+        if (!REG_USER_TEST.test(pass)) { //Una ultima validación con REG_USER_TEST
+            throw new Error('La contraseña no es válida')
+        }
+        resolve(true)
+    })
+}
 
 socket.on('error', (err) => {
     process.stdout.write(err + '');
