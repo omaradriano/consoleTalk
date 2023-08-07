@@ -59,18 +59,20 @@ rl.on('line', async (text) => {
             console.error(`----- Ha habido un error de la conexion a la base de datos -----`)
         }
     } else if (text === '!register') {
+        const MIN_PASS_LENGTH = 8
+        const MAX_PASS_LENGTH = 20
+        const REG_USER_TEST = /^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,20}$/g; //Las regex no admiten letra ñ 
+        const REG_CAPITAL_LETTERS = /[A-Z]+/g
+        const REG_NUMBERS = /\d+/g
         const name = await rl.question('Name: ')
         const username = await rl.question('Username: ')
         let pass = await rl.question('Password: ')
-        const regUserTest = /^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,20}$/g; //Las regex no admiten letra ñ 
-        const regCapitalLetters = /[A-Z]+/g
-        const regNumbers = /\d+/g
-        let passtester = false
+        let passtester = false //No se esta usando pero se va a usar para el ciclo do_while
         const uuid = uuid_v4().substring(0, 8)
         try {
             if (pass.length === 0) throw new Error('Debe de ingresarse una contraseña') //En caso de que no haya un texto ingresado
-            let passCapitalLettersTester = regCapitalLetters.test(pass)
-            let passNumbersTester = regNumbers.test(pass)
+            let passCapitalLettersTester = REG_CAPITAL_LETTERS.test(pass)
+            let passNumbersTester = REG_NUMBERS.test(pass)
             if (pass.length < 8) { //No pasa si tiene menos de 8 caracteres
                 throw new Error('La contraseña no debe tener menos de 8 caracteres')
             }
@@ -83,8 +85,7 @@ rl.on('line', async (text) => {
             if (!passNumbersTester) { //No pasa si no contiene números
                 throw new Error('La contraseña debe contener almenos un número')
             }
-            passtester = true
-            if (!regUserTest.test(pass) || !passtester) { //Una ultima validación con regUserTest
+            if (!REG_USER_TEST.test(pass)) { //Una ultima validación con REG_USER_TEST
                 throw new Error('La contraseña no es válida')
             }
             const confirmPass = await rl.question(`${colors.green('Confirm password: ')}`)
@@ -115,6 +116,8 @@ socket.on('data', async (message) => {
 
     process.stdout.write(message + '\n');
 })
+
+
 
 socket.on('error', (err) => {
     process.stdout.write(err + '');
