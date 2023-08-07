@@ -106,7 +106,7 @@ rl.on('line', async (text) => {
 socket.on('data', async (message) => {
     // const allMessage = message.replace(adminReg, message.match(adminReg) + ' ').split(' ')
 
-    process.stdout.write(message + '\n');
+    process.stdout.write(colors.blue(message) + '\n');
 })
 
 

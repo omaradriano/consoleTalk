@@ -24,7 +24,7 @@ const listen = (port) => {
             // console.log(allMessage);
             if (allMessage[0] === '!!') {
                 if (allMessage[1] === 'activeUser') {
-                    console.log(`${colors.green(allMessage[2])} se ha unido`);
+                    console.log(`${colors.blue(allMessage[2])} se ha unido`);
                     activeConnections.set(socket, allMessage[2])
                     // console.log(activeConnections);
                 }
@@ -46,7 +46,7 @@ const listen = (port) => {
                     socket.write('Comando desconocido');
                 }
             } else {
-                console.log(`${colors.magenta(user)} -> ${message}`);
+                process.stdout.write(`${colors.magenta(activeConnections.get(socket))} -> ${message}\n`);
                 sendMessages(message, socket)
             }
         })
@@ -65,8 +65,11 @@ const sendMessages = (message, originUser) => {
     //Enviar mensaje a todos menos a origin
     for (let user of activeConnections.keys()) {
         if (originUser !== user) {
-            user.write(`${activeConnections.get(user)} -> ${message}`)
+            user.write(`${activeConnections.get(originUser)} -> ${message}`)
         }
+        // else{
+        //     originUser.write(`Me -> ${message}`)
+        // }
         // if(originUser === user){
         //     user.write(`Tu -> ${message}`)
         // }
