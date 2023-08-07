@@ -25,38 +25,30 @@ rl.on('line', async (text) => {
                 break;
         }
         //RECODATORIO: no se debe de escribir despues de cerrar el socket por que nos va a llamar a un error.
-    } else if (text === '!login') { //SE NECESITA REAJUSTAR EL BLOQUE SIGUIENTE CON TRY CATCH
-        try { //Bloque trycatch que abarca un error en la conexion a la bdd
+    } else if (text === '!login') {
+        try {
             const user = await rl.question('User: ')
-            if (user.length === 0) throw new Error('El campo se encuentra vacio\n')
+            if (user.length === 0) throw new Error('Debe ingresar un nombre de usuario')
             const [checkUser] = await pool.query('select * from player where username = ?', [user])
-            // console.log(checkUser);
-            try { //este bloque abarca errores bajo las condiciones de usuario inexistente
-                if (checkUser.length === 0) {
-                    throw new Error('No existe el usuario en la base de datos\n')
-                }
-                if (checkUser[0].username.length !== 0) {
-                    const inPass = await rl.question('Ingresar password:')
-                    const [pass] = await pool.query('select pass from player where username = ?', [user])
-                    if (inPass === pass[0].pass) {
-                        activeState = true
-                        socket.write(`!!activeUser ${user}`)
-                        // console.log('Pasa por aqui');
-                        process.stdout.write('\x1Bc');
-                        process.stdout.write('---------- Envia mensaje o escribe \'!exit\' para salir ----------\n');
-                    } else {
-                        throw new Error('Contraseña incorrecta\n')
-                    }
-                }
-            } catch (err) {
-                process.stdout.write('\x1Bc');
-                process.stdout.write(err.message + '');
+            if (checkUser.length === 0) throw new Error('No existe el usuario en la base de datos')
+            if (checkUser[0].username.length === 0) throw new Error('No hay datos de usuario')
+            const inPass = await rl.question('Ingresar password:')
+            if (inPass.length === 0) throw new Error('Debe de ingresarse una contraseña')
+            const [pass] = await pool.query('select pass from player where username = ?', [user])
+            if (inPass !== pass[0].pass) throw new Error('Las contraseñas no coinciden')
+            //Después de esta linea se activa el usuario en el chat
+            activeState = true
+            socket.write(`!!activeUser ${user}`)
+            process.stdout.write('\x1Bc');
+            process.stdout.write('---------- Envia mensaje o escribe \'!exit\' para salir ----------\n');
+        } catch (error) {
+            process.stdout.write('\x1Bc');
+            if (error.code === 'ECONNREFUSED') {
+                process.stdout.write('Ha habido un error en la conexión a la base de datos\n');
+            } else {
+                process.stdout.write(error.message + '\n');
                 process.stdout.write('Se necesita una accion: !login | !register\n');
             }
-        } catch (err) {
-            process.stdout.write('\x1Bc');
-            process.stdout.write(err.message);
-            console.error(`----- Ha habido un error de la conexion a la base de datos -----`)
         }
     } else if (text === '!register') {
         const MIN_PASS_LENGTH = 8
@@ -74,10 +66,10 @@ rl.on('line', async (text) => {
             let passCapitalLettersTester = REG_CAPITAL_LETTERS.test(pass)
             let passNumbersTester = REG_NUMBERS.test(pass)
             if (pass.length < 8) { //No pasa si tiene menos de 8 caracteres
-                throw new Error('La contraseña no debe tener menos de 8 caracteres')
+                throw new Error(`La contraseña no debe tener menos de ${MIN_PASS_LENGTH} caracteres`)
             }
             if (pass.length > 20) { //No pasa si tiene más de 8 caracteres
-                throw new Error('La contraseña no debe tener más de 20 caracteres')
+                throw new Error(`La contraseña no debe tener más de ${MAX_PASS_LENGTH} caracteres`)
             }
             if (!passCapitalLettersTester) { //No pasa si no contiene mayúsculas
                 throw new Error('La contraseña debe contener letras masyúsculas')
