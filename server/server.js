@@ -26,13 +26,12 @@ const listen = (port) => {
                 if (allMessage[1] === 'activeUser') {
                     console.log(`${colors.blue(allMessage[2])} se ha unido`);
                     activeConnections.set(socket, allMessage[2])
-                    // console.log(activeConnections);
                 }
             } else if (allMessage[0] === '!') {
                 if (allMessage[1] === 'exit') {
+                    console.log(`${colors.red(activeConnections.get(socket))} ha salido`);
                     activeConnections.delete(socket)
                     socket.end()
-                    console.log(`${user} ha salido`);
                 } else if (allMessage[1] === 'test') {
                     socket.write('Comando test');
                 } else if (allMessage[1] === 'showUsers') {

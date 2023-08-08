@@ -9,16 +9,12 @@ JERARQUÍA
 *** Mejorar el login
     ** Aún se deben de corregir algunos detalles con el login
         * Con cada error que ocurre en el login debe retomar el paso donde se quedó, no tener que usar de nuevo el comando !login o !register
-*** Configurar el registro para no permitir usuarios con el mismo username
 **  Hacer procedimientos almacenados en sql para no mostrar los queries
 
 ----- cliente.js | comentarios comunidad Facebook -----
 
 ** Manejar un archivo externo que contenga las validaciones y el texto plano
 ** Tal vez uso de una librería para hacer las validaciones
-
-** Mucha complejidad ciclomática. ACTUALIZACION: ya es menos de eso
-
 
 ---------- server.js ----------
 

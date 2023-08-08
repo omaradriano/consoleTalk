@@ -51,12 +51,14 @@ rl.on('line', async (text) => {
             }
         }
     } else if (text === '!register') {
-        const name = await rl.question('Name: ')
-        const username = await rl.question('Username: ')
-        let pass = await rl.question('Password: ')
-        let passtester = false //No se esta usando pero se va a usar para el ciclo do_while
-        const uuid = uuid_v4().substring(0, 8)
         try {
+            const name = await rl.question('Name: ')
+            const username = await rl.question('Username: ')
+            const [userExists] = await pool.query('select * from player where name = ?', [username])
+            if (userExists.length > 0) throw new Error('El username ingresado ya existe')
+            let pass = await rl.question('Password: ')
+            let passtester = false //No se esta usando pero se va a usar para el ciclo do_while
+            const uuid = uuid_v4().substring(0, 8)
             await validatePass(pass)
             const confirmPass = await rl.question(`${colors.green('Confirm password: ')}`)
             if (confirmPass.length === 0) {
@@ -94,7 +96,7 @@ const validatePass = (pass, min_length = 8, max_length = 20) => {
         const REG_USER_TEST = /^(?=\w*\d)(?=\w*[A-Z])(?=\w*[a-z])\S{8,20}$/g; //Las regex no admiten letra ñ 
         const REG_CAPITAL_LETTERS = /[A-Z]+/g
         const REG_NUMBERS = /\d+/g
-    
+
         if (pass.length === 0) throw new Error('Debe de ingresarse una contraseña') //En caso de que no haya un texto ingresado
         let passCapitalLettersTester = REG_CAPITAL_LETTERS.test(pass)
         let passNumbersTester = REG_NUMBERS.test(pass)
