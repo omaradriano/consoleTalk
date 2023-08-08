@@ -19,34 +19,38 @@ const listen = (port) => {
 
         const user = `${socket.remoteAddress}:${socket.remotePort}`
 
-        socket.on('data', (message) => {
-            const allMessage = message.replace(adminReg, message.match(adminReg) + ' ').split(' ')
-            // console.log(allMessage);
-            if (allMessage[0] === '!!') {
-                if (allMessage[1] === 'activeUser') {
-                    console.log(`${colors.blue(allMessage[2])} se ha unido`);
-                    activeConnections.set(socket, allMessage[2])
-                }
-            } else if (allMessage[0] === '!') {
-                if (allMessage[1] === 'exit') {
-                    console.log(`${colors.red(activeConnections.get(socket))} ha salido`);
-                    activeConnections.delete(socket)
-                    socket.end()
-                } else if (allMessage[1] === 'test') {
-                    socket.write('Comando test');
-                } else if (allMessage[1] === 'showUsers') {
-                    for (let user of activeConnections.values()) {
-                        socket.write(`Name: ${user}\n`);
+        socket.on('data', (data) => {
+            const [prefix, command, message] = data.replace(adminReg, data.match(adminReg) + ' ').split(' ')
+            // console.log(prefix, command, message);
+            switch (prefix) {
+                case '!!':
+                    if (command === 'activeUser') {
+                        console.log(`${colors.blue(message)} se ha unido`);
+                        activeConnections.set(socket, message)
                     }
-                } else if (allMessage[1] === 'important') {
-                    socket.write(allMessage[2])
-                }
-                else {
-                    socket.write('Comando desconocido');
-                }
-            } else {
-                process.stdout.write(`${colors.magenta(activeConnections.get(socket))} -> ${message}\n`);
-                sendMessages(message, socket)
+                    break;
+                case '!':
+                    if (command === 'exit') {
+                        console.log(`${colors.red(activeConnections.get(socket))} ha salido`);
+                        activeConnections.delete(socket)
+                        socket.end()
+                    } else if (command === 'test') {
+                        socket.write('Comando test');
+                    } else if (command === 'showUsers') {
+                        for (let user of activeConnections.values()) {
+                            socket.write(`Name: ${user}\n`);
+                        }
+                    } else if (command === 'important') {
+                        socket.write(`${colors.magenta(activeConnections.get(socket))} -> ${message}\n`)
+                    }
+                    else {
+                        socket.write('Comando desconocido');
+                    }
+                    break; 
+                default:
+                    process.stdout.write(`${colors.magenta(activeConnections.get(socket))} -> ${data}\n`);
+                    sendMessages(data, socket)
+                    break
             }
         })
     })
@@ -66,12 +70,6 @@ const sendMessages = (message, originUser) => {
         if (originUser !== user) {
             user.write(`${activeConnections.get(originUser)} -> ${message}`)
         }
-        // else{
-        //     originUser.write(`Me -> ${message}`)
-        // }
-        // if(originUser === user){
-        //     user.write(`Tu -> ${message}`)
-        // }
     }
 
 }
