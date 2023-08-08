@@ -13,15 +13,19 @@ import pool from '../DB/dbconn.js' //Importar la base de datos
 
 let activeState = false
 
+let userData = null
+
 rl.on('line', async (text) => {
     if (activeState) {
         switch (text) {
             case '!exit':
-                socket.write(text)
+                userData.status = 'offline'
+                socket.write(JSON.stringify(userData))
                 socket.end()
                 break;
             default:
-                socket.write(text)
+                userData.message = text
+                socket.write(JSON.stringify(userData))
                 break;
         }
         //RECODATORIO: no se debe de escribir despues de cerrar el socket por que nos va a llamar a un error.
@@ -30,6 +34,7 @@ rl.on('line', async (text) => {
             const user = await rl.question('User: ')
             if (user.length === 0) throw new Error('Debe ingresar un nombre de usuario')
             const [checkUser] = await pool.query('select * from player where username = ?', [user])
+            let {u_id, name, username} = checkUser[0]
             if (checkUser.length === 0) throw new Error('No existe el usuario en la base de datos')
             if (checkUser[0].username.length === 0) throw new Error('No hay datos de usuario')
             const inPass = await rl.question('Ingresar password:')
@@ -37,9 +42,16 @@ rl.on('line', async (text) => {
             const [pass] = await pool.query('select pass from player where username = ?', [user])
             if (inPass !== pass[0].pass) throw new Error('Las contraseñas no coinciden')
             //Después de esta linea se activa el usuario en el chat
+            userData = {
+                username,
+                message: '',
+                status: 'online'
+            }
+            // console.log(typeof userData);
             activeState = true
-            socket.write(`!!activeUser ${user}`)
-            process.stdout.write('\x1Bc');
+            socket.write(JSON.stringify(userData))
+            delete userData.status
+            // process.stdout.write('\x1Bc');
             process.stdout.write('---------- Envia mensaje o escribe \'!exit\' para salir ----------\n');
         } catch (error) {
             process.stdout.write('\x1Bc');
@@ -86,7 +98,7 @@ rl.on('line', async (text) => {
 socket.on('data', async (message) => {
     // const allMessage = message.replace(adminReg, message.match(adminReg) + ' ').split(' ')
 
-    process.stdout.write(colors.blue(message) + '\n');
+    process.stdout.write(colors.magenta(message) + '\n');
 })
 
 const validatePass = (pass, min_length = 8, max_length = 20) => {

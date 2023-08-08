@@ -18,47 +18,55 @@ const listen = (port) => {
         const adminReg = /^(!|!!)(?=\w)/g
 
         const user = `${socket.remoteAddress}:${socket.remotePort}`
+        console.log(`Nuevo intento de conexion: ${user}`);
 
         socket.on('data', (data) => {
-            const [prefix, command, message] = data.replace(adminReg, data.match(adminReg) + ' ').split(' ')
-            // console.log(prefix, command, message);
-            switch (prefix) {
-                case '!!':
-                    if (command === 'activeUser') {
-                        console.log(`${colors.blue(message)} se ha unido`);
-                        activeConnections.set(socket, message)
-                    }
-                    break;
-                case '!':
-                    if (command === 'exit') {
-                        console.log(`${colors.red(activeConnections.get(socket))} ha salido`);
-                        activeConnections.delete(socket)
+            let { username, message, status } = JSON.parse(data)
+            if (status === 'online') {
+                activeConnections.set(socket, username)
+                sendAdvice(`${username} se ha unido`, socket)
+                process.stdout.write(`${username} se ha unido\n`)
+            } //Solo se usa cuando un usuario se loggea
+            if (status === 'offline') {
+                sendAdvice(`${username} ha salido`, socket)
+                process.stdout.write(`${username} ha salido\n`)
+                activeConnections.delete(socket)
+                return
+            } //Solo se usa cuando un usuario se loggea
+            const [prefix, command, text] = message.replace(adminReg, message.match(adminReg) + ' ').split(' ')
+            if (prefix === '!') {
+                switch (command) {
+                    case 'test':
+                        process.stdout.write('Ingresado comando test\n')
+                        socket.write('Ingresado comando test')
+                        break;
+                    case 'exit':
                         socket.end()
-                    } else if (command === 'test') {
-                        socket.write('Comando test');
-                    } else if (command === 'showUsers') {
-                        for (let user of activeConnections.values()) {
-                            socket.write(`Name: ${user}\n`);
+                        // sendMessages(`${activeConnections.get(socket)} ha salido`, socket)
+                        break;
+                    case 'connections':
+                        for(let item of activeConnections.values()){
+                            socket.write(item)
                         }
-                    } else if (command === 'important') {
-                        socket.write(`${colors.magenta(activeConnections.get(socket))} -> ${message}\n`)
-                    }
-                    else {
-                        socket.write('Comando desconocido');
-                    }
-                    break; 
-                default:
-                    process.stdout.write(`${colors.magenta(activeConnections.get(socket))} -> ${data}\n`);
-                    sendMessages(data, socket)
-                    break
+                        break;
+                    default:
+                        socket.write('Comando desconocido')
+                        // process.stdout.write('Comando desconocido')
+                        break
+                }
+            } else {
+                if (message.length !== 0) {
+                    sendMessages(message, socket) //Envía mensajes a los demás clientes
+                    process.stdout.write(`${activeConnections.get(socket)} -> ${message}\n`) //Imprime el mensaje en el servidor
+                }
             }
         })
     })
     server.on('error', (err) => {
         error(err.message)
-        activeConnections.delete(socket)
     })
     server.on('close', () => {
+        activeConnections.delete(socket)
         console.log(`${colors.red(socket.remoteAddress)} ha salido`);
     })
 }
@@ -71,7 +79,15 @@ const sendMessages = (message, originUser) => {
             user.write(`${activeConnections.get(originUser)} -> ${message}`)
         }
     }
+}
 
+const sendAdvice = (message, originUser) => {
+    //Enviar mensaje a todos menos a origin
+    for (let user of activeConnections.keys()) {
+        if (originUser !== user) {
+            user.write(`${message}`)
+        }
+    }
 }
 
 //Correr el servidor, esta parte ya no se toca de momento
